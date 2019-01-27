@@ -41,7 +41,7 @@ def train(model, datasets, labels,
         loss_train_list.append(np.mean(loss_list_tmp))
         if epoch % 10 == 0:
             save_model(model,model_name)
-        if show_train_plot and epoch % 2 ==0:
+        if show_train_plot and epoch % 20 ==0:
             plt.clf()
             plt.close()
             plt.ion()
@@ -53,7 +53,8 @@ def train(model, datasets, labels,
     return loss_train_list
 
 def mpc_iteration_hive(env, model,train_datasets, train_labels, sample_num = 500,
-                       horizon = 10, numb_bees = 10, max_itrs = 10, gamma = 0.85):
+                       horizon = 10, numb_bees = 10, max_itrs = 10, gamma = 0.85,
+                       model_name = "emmm"):
     learning_rate = 3e-5
     batch_size = 20
     num_epochs= 50
@@ -65,19 +66,20 @@ def mpc_iteration_hive(env, model,train_datasets, train_labels, sample_num = 500
 
     train_datasets_norm, train_labels_norm = model.normlize_datasets(train_datasets,train_labels)
     train(model,train_datasets_norm,train_labels_norm,
-          learning_rate,batch_size, num_epochs,weight_decay)
+          learning_rate,batch_size, num_epochs,weight_decay,model_name)
     return train_datasets, train_labels
 
 env=gym.make("Pendulum-v0")
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 input_size = 4
-h = 30
+h = 100
 output_size = 3
-num_units = 1
+num_units = 0
 
-model_name = "h1_30"
-model = torch.load('storage/h1_30.ckpt')
+model_name = "h0_100"
+model_path = "storage/"+model_name+".ckpt"
+model = torch.load(model_path)
 #model = mlp(input_size,output_size, h, num_units, device = device)
 
 model = model.to('cuda')
@@ -87,24 +89,24 @@ labels_path = './storage/labels_hive.pkl'
 train_datasets ,train_labels = load_dataset(datasets_path, labels_path)
 
 learning_rate = 3e-5
-batch_size = 20
-num_epochs= 2
+batch_size = 10
+num_epochs= 2000
 weight_decay = 1e-4,
 
 train_datasets_norm, train_labels_norm = model.normlize_datasets(train_datasets,train_labels)
 train(model,train_datasets_norm,train_labels_norm, learning_rate= learning_rate,
       num_epochs = num_epochs, model_name=model_name, batch_size=batch_size)
 
-plot_model_validation(env, model,horizons=20, samples=300)
+plot_model_validation(env, model,horizons=30, samples=300)
 #evaluate(model,train_datasets_norm,train_labels_norm)
 
 
-sample_num = 600
-train_datasets, train_labels = mpc_iteration_hive(env, \
-                                                  model,train_datasets, \
-                                                  train_labels, sample_num = 500, \
-                                                  horizon = 15, numb_bees = 8, \
-                                                  max_itrs = 10, gamma = 0.95)
+#sample_num = 600
+#train_datasets, train_labels = mpc_iteration_hive(env, \
+#                                                  model,train_datasets, \
+#                                                  train_labels, sample_num = sample_num, \
+#                                                  horizon = 15, numb_bees = 8, \
+#                                                  max_itrs = 10, gamma = 0.95, model_name=model_name)
 
 
 
